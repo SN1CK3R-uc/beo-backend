@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import path from 'node:path';
 import fs from 'node:fs';
 
-const DB_DIR = path.resolve('data');
+const DB_DIR = path.resolve(process.env.DATA_DIR || 'data');
 if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
 
 const DB_PATH = path.join(DB_DIR, 'beo.db');
