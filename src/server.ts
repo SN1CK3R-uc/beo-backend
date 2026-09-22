@@ -3,7 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'node:path';
 import { env } from './env.js';
-import './db/client.js';
+import { db } from './db/client.js';
 
 import { authRouter } from './routes/auth.routes.js';
 import { meRouter } from './routes/me.routes.js';
@@ -20,7 +20,12 @@ import { closeBrowser } from './services/pdf.service.js';
 
 const app = express();
 
-app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+app.use(
+  cors({
+    origin: env.CORS_ORIGIN,
+    credentials: true,
+  }),
+);
 app.use(express.json({ limit: '5mb' }));
 app.use(cookieParser());
 
@@ -40,8 +45,10 @@ app.use('/api/pdfs', pdfsRouter);
 app.use('/api/announcements', announcementsRouter);
 app.use('/api/audit', auditRouter);
 
+// 404 fallback
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 
+// Global error handler
 app.use(
   (
     err: Error,
@@ -54,6 +61,23 @@ app.use(
   },
 );
 
+// ---------- Auto-seed empty database on first boot ----------
+try {
+  const userCount = (
+    db.prepare('SELECT COUNT(*) as c FROM users').get() as { c: number }
+  ).c;
+
+  if (userCount === 0) {
+    console.log('📦 Empty database detected — seeding…');
+    await import('./db/seed.js');
+  } else {
+    console.log(`📊 Database has ${userCount} users — skipping seed.`);
+  }
+} catch (err) {
+  console.error('⚠️  Auto-seed failed:', err);
+}
+
+// ---------- Start server ----------
 app.listen(env.PORT, () => {
   console.log(`\n🚀 BEO Backend running`);
   console.log(`   → http://localhost:${env.PORT}`);
@@ -61,7 +85,13 @@ app.listen(env.PORT, () => {
   console.log(`   → Env: ${env.NODE_ENV}\n`);
 });
 
+// ---------- Graceful shutdown ----------
 process.on('SIGINT', async () => {
+  await closeBrowser();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
   await closeBrowser();
   process.exit(0);
 });
