@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.env.local
+data/
+storage/
+cookies.txt
+*.db
+*.db-shm
+*.db-wal
+.DS_Store
