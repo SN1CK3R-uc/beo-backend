@@ -1,21 +1,30 @@
 import puppeteer, { type Browser } from 'puppeteer';
+import path from 'node:path';
+import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { storage } from './storage.service.js';
 
-// Reuse a single browser instance across requests
 let browserPromise: Promise<Browser> | null = null;
 
 async function getBrowser(): Promise<Browser> {
   if (!browserPromise) {
+    // Resolve cache directory — same path used by postinstall and runtime
+    const cacheDir =
+      process.env.PUPPETEER_CACHE_DIR ??
+      path.resolve(process.cwd(), '.cache', 'puppeteer');
+
+    console.log('[puppeteer] launching browser, cache dir:', cacheDir);
+
     browserPromise = puppeteer.launch({
-    headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--single-process',
-    ],
-  });
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--single-process',
+        '--no-zygote',
+      ],
+    });
   }
   return browserPromise;
 }
@@ -38,10 +47,7 @@ export async function generatePdf(input: GenerateInput): Promise<GenerateResult>
   const page = await browser.newPage();
 
   try {
-    // Load the HTML into a blank page
     await page.setContent(input.html, { waitUntil: 'networkidle0' });
-
-    // Give fonts and images a beat to render
     await page.evaluateHandle('document.fonts.ready');
 
     const pdfBuffer = await page.pdf({
@@ -63,11 +69,10 @@ export async function generatePdf(input: GenerateInput): Promise<GenerateResult>
       sizeBytes: pdfBuffer.length,
     };
   } finally {
-    await page.close();   // ← always close the page, or memory leaks
+    await page.close();
   }
 }
 
-// Graceful shutdown — call this from server.ts on exit
 export async function closeBrowser(): Promise<void> {
   if (browserPromise) {
     const browser = await browserPromise;
