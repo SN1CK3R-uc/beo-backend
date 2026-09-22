@@ -73,12 +73,12 @@ authRouter.post('/login', (req, res) => {
   const token = jwt.sign({ sub: row.id }, env.JWT_SECRET, { expiresIn: '24h' });
 
   res.cookie(env.COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: env.COOKIE_MAX_AGE_MS,
-    path: '/',
-  });
+  httpOnly: true,
+  secure: env.NODE_ENV === 'production',
+  sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+  maxAge: env.COOKIE_MAX_AGE_MS,
+  path: '/',
+});
 
   const authedReq = { ...req, userId: row.id } as AuthedRequest;
   logAudit(authedReq, 'auth.login', row.id, `${row.name} logged in`);
