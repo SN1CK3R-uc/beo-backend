@@ -7,7 +7,7 @@
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
     "build": "tsc",
-    "seed": "tsx src/db/seed.ts"
+    "seed": "tsx src/db/seed.ts",
     "postinstall": "npx puppeteer browsers install chrome"
   },
   "keywords": [],
