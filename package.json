@@ -8,6 +8,7 @@
     "start": "tsx src/server.ts",
     "build": "tsc",
     "seed": "tsx src/db/seed.ts"
+    "postinstall": "npx puppeteer browsers install chrome"
   },
   "keywords": [],
   "author": "",
