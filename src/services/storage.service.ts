@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const STORAGE_DIR = path.resolve('storage', 'pdfs');
+const STORAGE_DIR = path.resolve(process.env.DATA_DIR || 'data', 'pdfs');
 
 if (!fs.existsSync(STORAGE_DIR)) {
   fs.mkdirSync(STORAGE_DIR, { recursive: true });
