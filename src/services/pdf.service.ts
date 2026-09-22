@@ -47,7 +47,9 @@ export async function generatePdf(input: GenerateInput): Promise<GenerateResult>
   const page = await browser.newPage();
 
   try {
-    await page.setContent(input.html, { waitUntil: 'networkidle0' });
+    // Encode the HTML as a data URL so Puppeteer treats it as a real page load
+    const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(input.html);
+    await page.goto(dataUrl, { waitUntil: 'networkidle0', timeout: 30_000 });
     await page.evaluateHandle('document.fonts.ready');
 
     const pdfBuffer = await page.pdf({
